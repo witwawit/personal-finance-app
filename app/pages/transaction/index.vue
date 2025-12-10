@@ -1,19 +1,21 @@
 <template>
-  <h1>Transaction</h1>
+  <h1 class="text-3xl font-semibold">Transaction</h1>
 
   <!-- table -->
-  <div class="p-8 rounded-[12px] shadow-[0_8px_24px_0_rgba(0,0,0,0.05)]">
+  <div
+    class="bg-background mt-8 p-8 rounded-[12px] shadow-[0_8px_24px_0_rgba(0,0,0,0.05)]"
+  >
     <!-- filter -->
-    <div class="flex flex-wrap items-center justify-between gap-5 mb-4">
+    <div class="flex items-center justify-between gap-5 mb-4">
       <!-- search -->
-      <div class="min-w-[400px]">
+      <div class="flex-1 min-w-[250px]">
         <Input placeholder="Search transaction" v-model="searchName" />
       </div>
 
       <div class="flex gap-5">
         <!-- sort by -->
         <div class="flex gap-2 items-center">
-          <p>Sort by</p>
+          <p class="hidden md:block">Sort by</p>
           <Select v-model="sortField">
             <SelectTrigger class="w-[150px]">
               <SelectValue placeholder="Sort by" />
@@ -31,7 +33,7 @@
 
         <!-- category -->
         <div class="flex gap-2 items-center">
-          <p>Category</p>
+          <p class="hidden md:block">Category</p>
           <Select v-model="selectedCategory">
             <SelectTrigger class="w-[150px]">
               <SelectValue placeholder="Category" />
@@ -52,7 +54,7 @@
     </div>
 
     <!-- table -->
-    <Table>
+    <Table v-if="!isMobile">
       <TableHeader>
         <TableRow>
           <TableHead>Recipient / Sender</TableHead>
@@ -61,6 +63,7 @@
           <TableHead class="text-right">Amount</TableHead>
         </TableRow>
       </TableHeader>
+
       <TableBody>
         <TableRow
           v-for="transaction in filteredAndPaginatedTransactions"
@@ -68,13 +71,15 @@
         >
           <TableCell class="flex items-center space-x-2">
             <Avatar>
-              <AvatarImage :src="transaction.avatar"  />
+              <AvatarImage :src="transaction.avatar" />
               <AvatarFallback>{{ transaction.name[0] }}</AvatarFallback>
             </Avatar>
             <span>{{ transaction.name }}</span>
           </TableCell>
+
           <TableCell>{{ transaction.category }}</TableCell>
           <TableCell>{{ formatDate(transaction.date) }}</TableCell>
+
           <TableCell class="text-right font-medium">
             {{ formatCurrency(transaction.amount) }}
           </TableCell>
@@ -82,15 +87,48 @@
       </TableBody>
     </Table>
 
+    <div v-else class="space-y-4">
+      <div
+        v-for="transaction in filteredAndPaginatedTransactions"
+        :key="transaction.name + transaction.date"
+        class="p-4 bg-background rounded-lg shadow"
+      >
+        <div class="flex items-center justify-between">
+          <div class="flex gap-2">
+            <Avatar>
+              <AvatarImage :src="transaction.avatar" />
+              <AvatarFallback>{{ transaction.name[0] }}</AvatarFallback>
+            </Avatar>
+            <div class="flex flex-col">
+              <span class="font-semibold">{{ transaction.name }}</span>
+              <span class="text-sm text-gray-500">{{
+                transaction.category
+              }}</span>
+            </div>
+          </div>
+
+          <div class="flex flex-col">
+            <span class="text-md font-medium">
+              {{ formatCurrency(transaction.amount) }}
+            </span>
+
+            <span class="text-xs">
+              {{ formatDate(transaction.date) }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- pagination -->
     <div class="flex justify-between items-center mt-4">
-      <button
-        class="px-3 py-1 rounded border"
+      <Button
+        class="px-3 py-1 rounded border border-sidebar-primary text-sidebar-primary"
         :disabled="currentPage === 1"
         @click="prevPage"
       >
         Prev
-      </button>
+      </Button>
 
       <div class="flex space-x-2">
         <button
@@ -98,29 +136,29 @@
           :key="page"
           @click="goToPage(page)"
           :class="[
-            'px-3 py-1 rounded border',
+            'px-3 py-1 rounded-sm border',
             page === currentPage
-              ? 'bg-blue-500 text-white border-blue-500'
-              : 'bg-white text-black',
+              ? 'bg-sidebar-primary text-white border-sidebar-primary'
+              : 'bg-white text-black border-sidebar-primary',
           ]"
         >
           {{ page }}
         </button>
       </div>
 
-      <button
-        class="px-3 py-1 rounded border"
+      <Button
+        class="px-3 py-1 rounded border border-sidebar-primary text-sidebar-primary"
         :disabled="currentPage === totalPagesFiltered"
         @click="nextPage"
       >
         Next
-      </button>
+      </Button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
 import data from "@/data/data.json";
 import { useRoute } from "vue-router";
 
@@ -135,6 +173,7 @@ interface Transaction {
 const transactions: Transaction[] = data.transactions;
 
 const searchName = ref<string>("");
+const isMobile = ref(false);
 
 const itemsPerPage = 10;
 const currentPage = ref<number>(1);
@@ -208,16 +247,24 @@ const nextPage = () => {
 const formatCurrency = (amount: number): string =>
   amount.toLocaleString("en-US", { style: "currency", currency: "USD" });
 
-const formatDate = (dateString: string): string => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString("en-US", {
+const formatDate = (dateStr: string) => {
+  const date = new Date(dateStr);
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "long",
     year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+  }).format(date);
 };
 
 watch([searchName, selectedCategory, sortField], () => {
   currentPage.value = 1;
+});
+
+onMounted(() => {
+  isMobile.value = window.innerWidth < 768;
+
+  window.addEventListener("resize", () => {
+    isMobile.value = window.innerWidth < 768;
+  });
 });
 </script>

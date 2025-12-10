@@ -1,41 +1,44 @@
 <template>
-  <h1>Recurring Bill</h1>
+  <h1 class="text-3xl font-semibold">Recurring Bill</h1>
 
   <div class="grid grid-cols-1 xl:grid-cols-3 gap-8 py-8">
     <!-- sum box -->
-    <div class="col-span-1 flex xl:flex-col gap-5 xl:gap-10">
-      <!-- box1 -->
-      <div
-        class="bg-black w-full rounded-[12px] p-[24px] text-white shadow-[0_8px_24px_0_rgba(0,0,0,0.05)]"
+    <div class="col-span-1 flex xl:flex-col gap-5">
+      <Card
+        class="bg-sidebar-primary w-full rounded-[12px] p-[24px] text-white shadow-[0_8px_24px_0_rgba(0,0,0,0.05)]"
       >
-        <h2>Total Bills</h2>
-        <h2>{{ formatCurrency(totalBills) }}</h2>
-      </div>
+        <CardContent class="flex flex-col justify-center">
+          <img src="/images/icon-recurring-bills.svg" class="w-10 h-10" />
+          <h2>Total Bills</h2>
+          <h2 class="text-3xl font-bold">{{ formatCurrency(totalBills) }}</h2>
+        </CardContent>
+      </Card>
 
-      <!-- box2 -->
-      <div
-        class="bg-white w-full rounded-[12px] p-[20px] shadow-[0_8px_24px_0_rgba(0,0,0,0.05)]"
+      <Card
+        class="bg-background w-full rounded-[12px] p-[20px] shadow-[0_8px_24px_0_rgba(0,0,0,0.05)]"
       >
-        <h2>Summary</h2>
-        <div class="flex justify-between border-b py-4">
-          <h3>Paid Bills</h3>
-          <h3>
-            {{ filteredPaidBillsCount }} ({{ formatCurrency(paidBills) }})
-          </h3>
-        </div>
+        <CardContent>
+          <h2 class="text-md font-semibold">Summary</h2>
+          <div class="flex justify-between border-b py-4 text-md">
+            <h3 class="font-normal">Paid Bills</h3>
+            <h3 class="font-semibold">
+              {{ filteredPaidBillsCount }} ({{ formatCurrency(paidBills) }})
+            </h3>
+          </div>
 
-        <div class="flex justify-between border-b py-4">
-          <h3 class="text-red-600">Due Soon</h3>
-          <h3 class="text-red-600">
-            {{ filteredDueSoonCount }} ({{ formatCurrency(dueSoon) }})
-          </h3>
-        </div>
-      </div>
+          <div class="flex justify-between border-b py-4 text-md text-chart-3">
+            <h3 class="font-normal">Due Soon</h3>
+            <h3 class="font-semibold">
+              {{ filteredDueSoonCount }} ({{ formatCurrency(dueSoon) }})
+            </h3>
+          </div>
+        </CardContent>
+      </Card>
     </div>
 
     <!-- table -->
     <div
-      class="col-span-2 rounded-[12px] shadow-[0_8px_24px_0_rgba(0,0,0,0.05)] p-6"
+      class="col-span-2 rounded-[12px] shadow-[0_8px_24px_0_rgba(0,0,0,0.05)] p-6 bg-background"
     >
       <div class="flex flex-wrap items-center justify-between gap-5 mb-4">
         <div class="min-w-[300px]">
@@ -75,7 +78,8 @@
           >
             <TableCell class="flex items-center space-x-2">
               <Avatar>
-                <AvatarFallback>👤</AvatarFallback>
+                <AvatarImage :src="transaction.avatar" />
+                <AvatarFallback>{{ transaction.name[0] }}</AvatarFallback>
               </Avatar>
               <span>{{ transaction.name }}</span>
             </TableCell>

@@ -10,7 +10,8 @@ export default {
   ],
   theme: {
     extend: {
-      colors: {
+      fontFamily: {
+        sans: ['"Public Sans"', 'sans-serif'],
       },
     },
   },

@@ -1,26 +1,25 @@
 <template>
   <div class="flex justify-between">
-    <h1>Budgets</h1>
+    <h1 class="text-3xl font-semibold">Budgets</h1>
     <Button>+ Add New Budgets</Button>
   </div>
 
   <div class="py-8">
     <div class="grid grid-cols-1 xl:grid-cols-5 gap-5">
-      <div class="col-span-2">
+      <div class="col-span-1 xl:col-span-2">
         <Card class="flex-1 shadow rounded-[12px] p-6">
           <CardContent>
             <!-- chart -->
 
             <!-- summary -->
-            <div>
+            <div class="flex flex-col">
               <p>Spending Summary</p>
               <div
                 v-for="budget in budgets"
                 :key="budget.category"
-                class="mt-5"
               >
                 <div
-                  class="flex justify-between pl-2 border-l-5"
+                  class="flex justify-between pl-2 border-l-5 my-4"
                   :style="{
                     borderLeftColor: budget.theme,
                     borderLeftStyle: 'solid',
@@ -29,13 +28,14 @@
                   <h2>{{ budget.category }}</h2>
                   <h2>{{ budget.spent }} of {{ budget.maximum }}</h2>
                 </div>
+                <Separator />
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <div class="col-span-3 flex flex-col gap-5">
+      <div class="col-span-1 xl:col-span-3 flex flex-col gap-5">
         <Card v-for="budget in budgets" :key="budget.category">
           <CardHeader>
             <div class="flex justify-between">
@@ -70,9 +70,11 @@
             <p>Maximum: {{ budget.maximum }}</p>
             <div class="py-5">
               <Progress
-                :value="budget.spent"
-                :max="budget.maximum"
+                :model-value="budget.spent"
+                :color="budget.theme"
+                :max="budget.remain"
                 class="w-full h-3 rounded"
+                :class="`bg-[${budget.theme}]`"
               />
             </div>
             <div class="grid grid-cols-2 gap-2 py-3">
@@ -111,7 +113,8 @@
                 >
                   <div class="flex items-center gap-2">
                     <Avatar>
-                      <AvatarFallback>👤</AvatarFallback>
+                      <AvatarImage :src="tx.avatar" />
+                      <AvatarFallback>{{ tx.name[0] }}</AvatarFallback>
                     </Avatar>
                     <span>{{ tx.name }}</span>
                   </div>
@@ -133,6 +136,7 @@
     :open="dialogOpen"
     :action="dialogAction"
     :budget="selectedBudget"
+    :budgets="budgets"
     @close="dialogOpen = false"
     @delete="deleteBudget"
     @save="saveBudget"
