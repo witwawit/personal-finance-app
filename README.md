@@ -1,75 +1,95 @@
-# Nuxt Minimal Starter
+# Personal finance app solution
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+### Built with
 
-## Setup
-
-Make sure to install dependencies:
+- [Vuejs](https://vuejs.org/) - JS library
+- [Nuxt.js](https://nuxt.com/) - Vue framework
+- [Shadcn Vue](https://www.shadcn-vue.com/) - For styles
 
 ```bash
-# npm
-npm install
-
-# pnpm
-pnpm install
-
 # yarn
 yarn install
 
-# bun
-bun install
+# build
+yarn buid
+
+# dev
+yarn nuxt dev
 ```
 
-## Development Server
+### Links
 
-Start the development server on `http://localhost:3000`:
+_Deploy By Netlify_
 
-```bash
-# npm
-npm run dev
+- Site URL: [Netlify](https://moonlit-croquembouche-c287a7.netlify.app/)
 
-# pnpm
-pnpm dev
+_Github Repository_
 
-# yarn
-yarn dev
+- Site URL: [Github](https://github.com/witwawit/personal-finance-app/tree/master)
 
-# bun
-bun run dev
-```
+_Branch_
 
-## Production
+- All Work is in master
 
-Build the application for production:
+## My Duration of this work
 
-```bash
-# npm
-npm run build
+About 3 days (I started count when my gmail test was send (when 10.00 pm))
 
-# pnpm
-pnpm build
+## 100% responsive and follow by design theme
 
-# yarn
-yarn build
+## Features Implemented
 
-# bun
-bun run build
-```
+## Layout
 
-Locally preview production build:
+- Responsive Navbar can hide navbar , active , different style in each screen
+- if path is / will redirect to /overview
 
-```bash
-# npm
-npm run preview
+## Overview Page
 
-# pnpm
-pnpm preview
+- Displays all financial data according to the design.
+- Clicking "See More" or "View All" links to other detailed pages.
 
-# yarn
-yarn preview
+## Transactions Page
 
-# bun
-bun run preview
-```
+- Correct pagination implementation.
+- Users can sort and search transactions.
 
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+## Budgets Page
+
+- Displays various lists with pie chart graphics.
+- Allows deleting entries, which will update the chart.
+- Deleting data (Simulated).
+- Editing categories (Prevents selecting duplicate categories. If a category is duplicated, it will be disabled).
+- Click "See All" at Latest Spending will redirect to transaction by auto sorting
+
+_Missing Features_:
+
+- Users cannot create new entries yet.
+- Theme customization (color changes) is not yet possible.
+
+## Pots Page
+
+- Displays a list of pots with progress charts showing calculated percentages.
+- Allows deleting entries (Simulated).
+
+_Missing Features_:
+
+- Editing data
+- Creating new entries
+- Modal functionality for "Withdraw" and "Add Money" is not yet implemented.
+
+## Recurring Bills Page
+
+The logic for recurring bills is based on the most recent transaction date.
+The README mentions August 19, 2024, but in the transaction data, the latest transaction is for August 20, 2024, for "Savory Bites Bistro." Therefore, I have used August 20, 2024, as the reference date.
+
+- Displays all recurring transactions (recurring = true).
+- If there are duplicate entries, only the most recent vendor is shown.
+- Text "Total Bills": Represents the total amount of all transactions displayed in the table.
+- Paid: Displays items that have passed their most recent transaction date (e.g., July 20, 2024). All of these items are considered completed.
+- Upcoming: Displays transactions after July 20, 2024. Since there are none, nothing is shown.
+- Due Soon: Displays transactions that are due within the next 5 days of the most recent date (e.g., before July 20, 2024). No transactions meet this criterion, so nothing is displayed.
+
+_I apologize if some of the features do not fully meet the original specifications or are incomplete._
+
+Thank you for your consideration, and I sincerely hope to have the opportunity to work with your organization.

@@ -9,7 +9,7 @@ const router = useRouter();
 const route = useRoute();
 
 if (route.path === "/") {
-  router.push("/transaction");
+  router.push("/overview");
 }
 </script>
 

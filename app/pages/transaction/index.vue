@@ -1,5 +1,5 @@
 <template>
-  <h1 class="text-3xl font-semibold">Transaction</h1>
+  <h1 class="text-3xl font-bold">Transaction</h1>
 
   <!-- table -->
   <div

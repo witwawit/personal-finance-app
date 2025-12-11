@@ -1,5 +1,5 @@
 <template>
-  <h1 class="text-3xl font-semibold">Recurring Bill</h1>
+  <h1 class="text-3xl font-bold">Recurring Bill</h1>
 
   <div class="grid grid-cols-1 xl:grid-cols-3 gap-8 py-8">
     <!-- sum box -->
@@ -23,6 +23,13 @@
             <h3 class="font-normal">Paid Bills</h3>
             <h3 class="font-semibold">
               {{ filteredPaidBillsCount }} ({{ formatCurrency(paidBills) }})
+            </h3>
+          </div>
+
+          <div class="flex justify-between border-b py-4 text-md text-upcoming">
+            <h3 class="font-normal">Total Upcoming</h3>
+            <h3 class="font-semibold">
+              {{ filteredUpcomingCount }} ({{ formatCurrency(totalUpcoming) }})
             </h3>
           </div>
 
@@ -86,7 +93,7 @@
             <TableCell>
               {{ formatDate(transaction.date) }}
             </TableCell>
-            <TableCell class="text-right font-medium">
+            <TableCell class="text-right font-bold">
               {{ formatCurrency(transaction.amount) }}
             </TableCell>
           </TableRow>
@@ -111,9 +118,7 @@ import data from "@/data/data.json";
 import { formatCurrency } from "../../helper/formatter";
 
 const transactions: Transaction[] = data.transactions;
-
 const searchName = ref<string>("");
-
 const sortField = ref<
   "latest" | "oldest" | "aToZ" | "zToA" | "highest" | "lowest"
 >("latest");
@@ -122,7 +127,6 @@ const billsTransactions = computed<Transaction[]>(() =>
   transactions.filter((t) => t.recurring)
 );
 
-// Keep only the latest recurring bill per name
 const latestRecurringBills = computed<Transaction[]>(() => {
   const map = new Map<string, Transaction>();
 
@@ -139,6 +143,15 @@ const latestRecurringBills = computed<Transaction[]>(() => {
   });
 
   return Array.from(map.values());
+});
+
+const latestTransactionDate = computed<Date>(() => {
+  const latest = transactions.reduce((prev, curr) => {
+    const prevTime = new Date(prev.date).getTime();
+    const currTime = new Date(curr.date).getTime();
+    return currTime > prevTime ? curr : prev;
+  });
+  return new Date(latest.date);
 });
 
 const filteredTransactions = computed<Transaction[]>(() => {
@@ -170,29 +183,64 @@ const filteredTransactions = computed<Transaction[]>(() => {
   });
 });
 
+const getNextDueDate = (bill: Transaction, referenceDate: Date): Date => {
+  const billDate = new Date(bill.date);
+  let nextDate = new Date(billDate);
+
+  while (nextDate.getTime() <= referenceDate.getTime()) {
+    nextDate.setMonth(nextDate.getMonth() + 1);
+  }
+
+  return nextDate;
+};
+
+const paidBillsTransactions = computed<Transaction[]>(() =>
+  latestRecurringBills.value.filter(
+    (t) => new Date(t.date).getTime() <= latestTransactionDate.value.getTime()
+  )
+);
+
+const dueSoonTransactions = computed<Transaction[]>(() =>
+  latestRecurringBills.value.filter((t) => {
+    const diff =
+      (new Date(t.date).getTime() - latestTransactionDate.value.getTime()) /
+      (1000 * 60 * 60 * 24);
+    return diff > 0 && diff <= 5;
+  })
+);
+
+const upcomingTransactions = computed<Transaction[]>(() =>
+  latestRecurringBills.value.filter((t) => {
+    const diff =
+      (new Date(t.date).getTime() - latestTransactionDate.value.getTime()) /
+      (1000 * 60 * 60 * 24);
+    return diff > 5;
+  })
+);
+
+// Calculations
 const totalBills = computed<number>(() =>
   latestRecurringBills.value.reduce((sum, t) => sum + t.amount, 0)
 );
 
-const filteredPaidBillsCount = computed<number>(
-  () => latestRecurringBills.value.filter((t) => t.recurring).length
-);
-
-const filteredDueSoonCount = computed<number>(
-  () => latestRecurringBills.value.filter((t) => !t.recurring).length
-);
-
 const paidBills = computed<number>(() =>
-  billsTransactions.value
-    .filter((t) => t.recurring)
-    .reduce((sum, t) => sum + t.amount, 0)
+  paidBillsTransactions.value.reduce((sum, t) => sum + t.amount, 0)
 );
 
 const dueSoon = computed<number>(() =>
-  billsTransactions.value
-    .filter((t) => !t.recurring)
-    .reduce((sum, t) => sum + t.amount, 0)
+  dueSoonTransactions.value.reduce((sum, t) => sum + t.amount, 0)
 );
+
+const totalUpcoming = computed<number>(() =>
+  upcomingTransactions.value.reduce((sum, t) => sum + t.amount, 0)
+);
+
+// Counts
+const filteredPaidBillsCount = computed(
+  () => paidBillsTransactions.value.length
+);
+const filteredDueSoonCount = computed(() => dueSoonTransactions.value.length);
+const filteredUpcomingCount = computed(() => upcomingTransactions.value.length);
 
 const formatDate = (isoDate: string): string => {
   const date = new Date(isoDate);

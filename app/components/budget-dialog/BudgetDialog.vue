@@ -25,7 +25,7 @@
       <!-- eidt form -->
       <Form @submit="onSave" class="flex flex-col gap-2">
         <div v-if="props.action === 'edit'" class="flex flex-col gap-2 text-sm">
-          <!-- catagory select -->
+          <!-- category select -->
           <strong>Category:</strong>
           <Select v-model="category" class="w-full">
             <SelectTrigger>
@@ -60,6 +60,47 @@
             placeholder="Enter maximum budget"
           />
           <span class="text-red-500 text-xs">{{ errors.maximum }}</span>
+
+          <!-- color select -->
+          <strong>Theme Color:</strong>
+
+          <div class="flex items-center gap-2">
+            <div
+              class="w-6 h-6 rounded-full border"
+              :style="{ backgroundColor: theme }"
+            ></div>
+
+            <Select v-model="theme" class="w-full">
+              <SelectTrigger>
+                <SelectValue placeholder="Choose a theme color" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectLabel>Available Colors</SelectLabel>
+
+                  <SelectItem
+                    v-for="color in themeColors"
+                    :key="color.value"
+                    :value="color.value"
+                    :disabled="usedColors.includes(color.value)"
+                  >
+                    <div class="flex items-center gap-2">
+                      <span
+                        class="w-4 h-4 rounded-full border"
+                        :style="{ backgroundColor: color.value }"
+                      ></span>
+                      {{ color.label }}
+                      <span
+                        v-if="usedColors.includes(color.value)"
+                        class="text-xs text-gray-400"
+                        >Already used</span
+                      >
+                    </div>
+                  </SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <DialogFooter>
@@ -84,8 +125,8 @@
             <Button
               v-if="props.action === 'edit'"
               type="submit"
-              class="w-100 bg-sidebar-primary hover:bg-sidebar-primary hover:cursor-pointer"
-              >Save</Button
+              class="w-100 bg-sidebar-primary hover:bg-sidebar-primary hover:cursor-pointer mt-5"
+              >Save Changes</Button
             >
           </div>
         </DialogFooter>
@@ -106,6 +147,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ref, watch, computed } from "vue";
 import { useForm, Field, Form } from "vee-validate";
+import { themeColors } from "../../data/pallette";
 import * as yup from "yup";
 
 interface Transaction {
@@ -138,6 +180,14 @@ const emit = defineEmits(["close", "delete", "save"]);
 const category = ref("");
 const maximum = ref(0);
 const theme = ref("#000000");
+
+const usedColors = computed(() => {
+  return (
+    props.budgets
+      ?.filter((b) => b.category !== props.budget?.category)
+      .map((b) => b.theme) || []
+  );
+});
 
 const transactionCategories = computed(() => {
   const categories = props.transactions.map((tx) => tx.category);

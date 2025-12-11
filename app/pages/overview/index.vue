@@ -1,5 +1,5 @@
 <template>
-  <h1 class="text-3xl font-semibold">Overview</h1>
+  <h1 class="text-3xl font-bold">Overview</h1>
 
   <div class="flex flex-col xl:flex-row justify-between gap-6 py-8">
     <Card
@@ -20,7 +20,7 @@
   <div class="grid grid-cols-1 xl:grid-cols-5 gap-6">
     <div class="col-span-1 xl:col-span-3 flex flex-col gap-5">
       <!-- pots -->
-      <Card class="flex-1 shadow-[0_8px_24px_0_rgba(0,0,0,0.05) rounded-[12px]">
+      <Card class="shadow-[0_8px_24px_0_rgba(0,0,0,0.05) rounded-[12px]">
         <CardHeader>
           <div class="flex justify-between items-center">
             <h2 class="text-xl font-semibold">Pots</h2>
@@ -65,7 +65,7 @@
       </Card>
 
       <!-- transaction -->
-      <Card class="flex-1 shadow-[0_8px_24px_0_rgba(0,0,0,0.05) rounded-[12px]">
+      <Card class="shadow-[0_8px_24px_0_rgba(0,0,0,0.05) rounded-[12px]">
         <CardHeader>
           <div class="flex justify-between items-center">
             <h2 class="text-xl font-semibold">Transaction</h2>
@@ -90,7 +90,10 @@
               <span>{{ tx.name }}</span>
             </div>
             <div class="text-right">
-              <p class="text-md font-semibold">
+              <p
+                class="text-md font-semibold"
+                :class="tx.amount < 0 ? '' : 'text-chart-2'"
+              >
                 {{ formatCurrencyNegative(tx.amount) }}
               </p>
               <p class="text-xs font-thin">{{ formatDate(tx.date) }}</p>
@@ -155,11 +158,19 @@
         </CardHeader>
         <CardContent>
           <div
-            class="p-5 mt-3 border-l-5 border-[#277C78] rounded-[12px] flex justify-between bg-primary"
+            class="p-5 mt-3 border-l-5 border-chart-2 rounded-[12px] flex justify-between bg-primary"
           >
             <p>Paid Bills</p>
             <p class="font-semibold">{{ formatCurrency(paidBills) }}</p>
           </div>
+
+          <div
+            class="p-5 mt-3 border-l-5 border-chart-1 rounded-[12px] flex justify-between bg-primary"
+          >
+            <p>Total Upcoming</p>
+            <p class="font-semibold">{{ formatCurrency(upcoming) }}</p>
+          </div>
+
           <div
             class="p-5 mt-3 border-l-5 border-[#82C9D7] rounded-[12px] flex justify-between bg-primary"
           >
@@ -174,22 +185,78 @@
 
 <script setup lang="ts">
 import data from "@/data/data.json";
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { formatCurrency, formatCurrencyNegative } from "../../helper/formatter";
 
-const budgets = data.budgets.map((budget) => {
-  const spent = data.transactions
-    .filter((tx) => tx.category === budget.category)
-    .reduce((acc, tx) => acc + Math.abs(tx.amount), 0);
+interface Transaction {
+  name: string;
+  category: string;
+  date: string;
+  amount: number;
+  recurring: boolean;
+  avatar?: string;
+}
 
-  const remain = budget.maximum - spent;
+const transactions: Transaction[] = data.transactions;
 
-  return {
-    ...budget,
-    spent,
-    remain,
-  };
+const billsTransactions = computed<Transaction[]>(() =>
+  transactions.filter((t) => t.recurring)
+);
+
+const latestRecurringBills = computed<Transaction[]>(() => {
+  const map = new Map<string, Transaction>();
+  billsTransactions.value.forEach((t) => {
+    const existing = map.get(t.name);
+    if (
+      !existing ||
+      new Date(t.date).getTime() > new Date(existing.date).getTime()
+    ) {
+      map.set(t.name, t);
+    }
+  });
+  return Array.from(map.values());
 });
+
+const latestTransactionDate = computed<Date>(() => {
+  const latest = transactions.reduce((prev, curr) =>
+    new Date(curr.date).getTime() > new Date(prev.date).getTime() ? curr : prev
+  );
+  return new Date(latest.date);
+});
+
+const paidBillsTransactions = computed<Transaction[]>(() =>
+  latestRecurringBills.value.filter(
+    (t) => new Date(t.date).getTime() <= latestTransactionDate.value.getTime()
+  )
+);
+
+const dueSoonTransactions = computed<Transaction[]>(() =>
+  latestRecurringBills.value.filter((t) => {
+    const diff =
+      (new Date(t.date).getTime() - latestTransactionDate.value.getTime()) /
+      (1000 * 60 * 60 * 24);
+    return diff > 0 && diff <= 5;
+  })
+);
+
+const upcomingTransactions = computed<Transaction[]>(() =>
+  latestRecurringBills.value.filter((t) => {
+    const diff =
+      (new Date(t.date).getTime() - latestTransactionDate.value.getTime()) /
+      (1000 * 60 * 60 * 24);
+    return diff > 5;
+  })
+);
+
+const paidBills = computed(() =>
+  paidBillsTransactions.value.reduce((sum, t) => sum + t.amount, 0)
+);
+const dueSoon = computed(() =>
+  dueSoonTransactions.value.reduce((sum, t) => sum + t.amount, 0)
+);
+const upcoming = computed(() =>
+  upcomingTransactions.value.reduce((sum, t) => sum + t.amount, 0)
+);
 
 const balanceCards = {
   Current: formatCurrency(data.balance.current),
@@ -199,26 +266,19 @@ const balanceCards = {
 
 const totalPots = data.pots.reduce((sum, pot) => sum + pot.total, 0);
 const showPots = data.pots.slice(0, 4);
-const transactions = data.transactions.slice(0, 4);
+const recentTransactions = data.transactions.slice(0, 4);
 
-const billsTransactions = data.transactions.filter(
-  (tx) => tx.category === "Bills"
-);
+const budgets = data.budgets.map((budget) => {
+  const spent = data.transactions
+    .filter((tx) => tx.category === budget.category)
+    .reduce((acc, tx) => acc + Math.abs(tx.amount), 0);
+  return { ...budget, spent, remain: budget.maximum - spent };
+});
 
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
-  return new Intl.DateTimeFormat("en-GB", {
+const formatDate = (dateString: string) =>
+  new Intl.DateTimeFormat("en-GB", {
     day: "2-digit",
     month: "long",
     year: "numeric",
-  }).format(date);
-};
-
-const paidBills: number = billsTransactions
-  .filter((bg) => bg.recurring === true)
-  .reduce((sum, bg) => sum + Math.abs(bg.amount), 0);
-
-const dueSoon: number = billsTransactions
-  .filter((bg) => bg.recurring === false)
-  .reduce((sum, bg) => sum + Math.abs(bg.amount), 0);
+  }).format(new Date(dateString));
 </script>

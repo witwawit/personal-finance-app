@@ -1,6 +1,6 @@
 <template>
   <div class="flex justify-between">
-    <h1 class="text-3xl font-semibold">Budgets</h1>
+    <h1 class="text-3xl font-bold">Budgets</h1>
     <!-- <Button>+ Add New Budgets</Button> -->
   </div>
 
@@ -46,7 +46,7 @@
                   class="w-5 h-5 rounded-full"
                   :style="{ backgroundColor: budget.theme }"
                 ></div>
-                <div>{{ budget.category }}</div>
+                <p class="font-bold text-xl">{{ budget.category }}</p>
               </div>
 
               <DropdownMenu>

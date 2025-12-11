@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="flex justify-between">
-      <h1 class="text-3xl font-semibold">Pots</h1>
+      <h1 class="text-3xl font-bold">Pots</h1>
     </div>
 
     <div class="grid grid-cols-1 xl:grid-cols-4 gap-3 py-8">
@@ -14,7 +14,7 @@
                   class="w-5 h-5 rounded-full"
                   :style="{ backgroundColor: pot.theme }"
                 ></div>
-                <div>{{ pot.name }}</div>
+                <p class="font-bold text-xl">{{ pot.name }}</p>
               </div>
 
               <DropdownMenu>
@@ -23,8 +23,12 @@
                 </DropdownMenuTrigger>
 
                 <DropdownMenuContent class="w-40" align="end">
+                  <DropdownMenuItem @click="openDialog('edit', pot)">
+                    Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    @click="openDialog(pot)"
+                    @click="openDialog('delete', pot)"
                     class="text-chart-3"
                   >
                     Delete
@@ -36,8 +40,8 @@
 
           <CardContent>
             <div class="flex justify-between items-center">
-              <p>Total Saved</p>
-              <p>{{ formatCurrency(pot.total) }}</p>
+              <p class="text-sm font-thin">Total Saved</p>
+              <p class="text-3xl font-bold">{{ formatCurrency(pot.total) }}</p>
             </div>
             <div class="py-5">
               <Progress
@@ -48,21 +52,27 @@
               />
             </div>
             <div class="flex justify-between items-center">
-              <p>{{ ((pot.total / pot.target) * 100).toFixed(2) }}%</p>
-              <p>Target of {{ formatCurrency(pot.target) }}</p>
+              <p class="text-md font-bold">
+                {{ ((pot.total / pot.target) * 100).toFixed(2) }}%
+              </p>
+              <p class="text-xs font-thin">
+                Target of {{ formatCurrency(pot.target) }}
+              </p>
             </div>
           </CardContent>
 
           <CardFooter>
             <div class="flex w-full gap-3">
               <Button
-                class="flex-1 text-sidebar-primary font-semibold hover:cursor-pointer"
-                >+ Add Money</Button
+                class="flex-1 text-sidebar-primary font-semibold hover:cursor-pointer hover:border hover:border-sidebar-primary hover:bg-background"
               >
+                + Add Money
+              </Button>
               <Button
-                class="flex-1 text-sidebar-primary font-semibold hover:cursor-pointer"
-                >Withdraw</Button
+                class="flex-1 text-sidebar-primary font-semibold hover:cursor-pointer hover:border hover:border-sidebar-primary hover:bg-background"
               >
+                Withdraw
+              </Button>
             </div>
           </CardFooter>
         </Card>
@@ -72,9 +82,11 @@
   <!-- modal -->
   <PotDialog
     :open="dialogOpen"
+    :action="dialogAction"
     :pot="selectedPot"
     @close="dialogOpen = false"
     @delete="deletePot"
+    @save="savePot"
   />
 </template>
 
@@ -92,15 +104,24 @@ import { formatCurrency } from "../../helper/formatter";
 
 const pots = ref(data.pots);
 const dialogOpen = ref(false);
+const dialogAction = ref<"edit" | "delete" | null>(null);
 const selectedPot = ref<any>(null);
 
-const openDialog = (pot: any) => {
-  selectedPot.value = pot;
+const openDialog = (action: "edit" | "delete", pot: IPot) => {
+  selectedPot.value = { ...pot };
+  dialogAction.value = action;
   dialogOpen.value = true;
 };
 
 const deletePot = (pot: IPot) => {
   pots.value = pots.value.filter((p) => p.name !== pot.name);
+  dialogOpen.value = false;
+};
+
+const savePot = (pot: IPot) => {
+  pots.value = pots.value.map((p) =>
+    p.name === selectedPot.value?.name ? pot : p
+  );
   dialogOpen.value = false;
 };
 </script>
