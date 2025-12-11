@@ -104,14 +104,14 @@
             </div>
             <Card class="bg-primary">
               <CardHeader
-                ><div class="flex justify-between">
-                  <p class="text-md font-semibold">Lastest Spending</p>
+                ><div class="flex justify-between items-center">
+                  <p class="text-md font-semibold">Latest Spending</p>
                   <NuxtLink
                     :to="{
                       path: '/transaction',
                       query: { category: budget.category },
                     }"
-                    class="hover:underline"
+                    class="hover:underline text-sm md:text-md"
                   >
                     See All
                   </NuxtLink>
@@ -124,15 +124,15 @@
                   class="flex justify-between border-b-1 py-3"
                 >
                   <div class="flex items-center gap-2">
-                    <Avatar>
+                    <Avatar class="hidden md:block">
                       <AvatarImage :src="tx.avatar" />
                       <AvatarFallback>{{ tx.name[0] }}</AvatarFallback>
                     </Avatar>
-                    <span>{{ tx.name }}</span>
+                    <span class="font-semibold">{{ tx.name }}</span>
                   </div>
                   <div class="text-right">
-                    <p>{{ formatCurrency(tx.amount) }}</p>
-                    <p>{{ tx.date }}</p>
+                    <p class="text-sm font-bold">{{ formatCurrency(tx.amount) }}</p>
+                    <p class="text-xs md:text-md font-thin">{{ tx.date }}</p>
                   </div>
                 </div>
               </CardContent>

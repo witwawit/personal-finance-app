@@ -63,9 +63,7 @@ About 3 days (I started count when my gmail test was send (when 10.00 pm))
 - Click "See All" at Latest Spending will redirect to transaction by auto sorting
 
 _Missing Features_:
-
 - Users cannot create new entries yet.
-- Theme customization (color changes) is not yet possible.
 
 ## Pots Page
 
@@ -73,8 +71,7 @@ _Missing Features_:
 - Allows deleting entries (Simulated).
 
 _Missing Features_:
-
-- Editing data
+- Validation
 - Creating new entries
 - Modal functionality for "Withdraw" and "Add Money" is not yet implemented.
 
@@ -83,12 +80,6 @@ _Missing Features_:
 The logic for recurring bills is based on the most recent transaction date.
 The README mentions August 19, 2024, but in the transaction data, the latest transaction is for August 20, 2024, for "Savory Bites Bistro." Therefore, I have used August 20, 2024, as the reference date.
 
-- Displays all recurring transactions (recurring = true).
-- If there are duplicate entries, only the most recent vendor is shown.
-- Text "Total Bills": Represents the total amount of all transactions displayed in the table.
-- Paid: Displays items that have passed their most recent transaction date (e.g., July 20, 2024). All of these items are considered completed.
-- Upcoming: Displays transactions after July 20, 2024. Since there are none, nothing is shown.
-- Due Soon: Displays transactions that are due within the next 5 days of the most recent date (e.g., before July 20, 2024). No transactions meet this criterion, so nothing is displayed.
 
 _I apologize if some of the features do not fully meet the original specifications or are incomplete._
 

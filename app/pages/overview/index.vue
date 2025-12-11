@@ -224,27 +224,30 @@ const latestTransactionDate = computed<Date>(() => {
   return new Date(latest.date);
 });
 
+const getDayOfMonth = (date: string) => new Date(date).getUTCDate();
+
+// Paid bills: day <= latest transaction day
 const paidBillsTransactions = computed<Transaction[]>(() =>
-  latestRecurringBills.value.filter(
-    (t) => new Date(t.date).getTime() <= latestTransactionDate.value.getTime()
-  )
+  latestRecurringBills.value.filter((t) => {
+    const billDay = getDayOfMonth(t.date);
+    const latestDay = latestTransactionDate.value.getUTCDate();
+    return billDay <= latestDay;
+  })
 );
 
 const dueSoonTransactions = computed<Transaction[]>(() =>
   latestRecurringBills.value.filter((t) => {
-    const diff =
-      (new Date(t.date).getTime() - latestTransactionDate.value.getTime()) /
-      (1000 * 60 * 60 * 24);
-    return diff > 0 && diff <= 5;
+    const billDay = getDayOfMonth(t.date);
+    const latestDay = latestTransactionDate.value.getUTCDate();
+    return billDay > latestDay && billDay <= latestDay + 5;
   })
 );
 
 const upcomingTransactions = computed<Transaction[]>(() =>
   latestRecurringBills.value.filter((t) => {
-    const diff =
-      (new Date(t.date).getTime() - latestTransactionDate.value.getTime()) /
-      (1000 * 60 * 60 * 24);
-    return diff > 5;
+    const billDay = getDayOfMonth(t.date);
+    const latestDay = latestTransactionDate.value.getUTCDate();
+    return billDay > latestDay;
   })
 );
 

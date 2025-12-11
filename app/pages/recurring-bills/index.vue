@@ -70,7 +70,7 @@
         </div>
       </div>
 
-      <Table>
+      <Table v-if="!isMobile">
         <TableHeader>
           <TableRow>
             <TableHead>Bill Title</TableHead>
@@ -90,8 +90,26 @@
               </Avatar>
               <span>{{ transaction.name }}</span>
             </TableCell>
-            <TableCell>
-              {{ formatDate(transaction.date) }}
+            <TableCell
+              :class="{
+                'text-chart-2': isPaid(transaction),
+                '': isDueSoon(transaction),
+                '': !isPaid(transaction) && !isDueSoon(transaction),
+              }"
+            >
+              <div class="flex items-center gap-2">
+                {{ formatDate(transaction.date) }}
+                <img
+                  v-if="isPaid(transaction)"
+                  src="/images/icon-bill-paid.svg"
+                  alt=""
+                />
+                <img
+                  v-else-if="isDueSoon(transaction)"
+                  src="/images/icon-bill-due.svg"
+                  alt=""
+                />
+              </div>
             </TableCell>
             <TableCell class="text-right font-bold">
               {{ formatCurrency(transaction.amount) }}
@@ -99,6 +117,55 @@
           </TableRow>
         </TableBody>
       </Table>
+
+      <div v-else class="space-y-4">
+        <div
+          v-for="transaction in filteredTransactions"
+          :key="transaction.name + transaction.date"
+          class="p-4 bg-background rounded-lg shadow"
+        >
+          <div class="flex items-center justify-between">
+            <div class="flex gap-2">
+              <Avatar>
+                <AvatarImage :src="transaction.avatar" />
+                <AvatarFallback>{{ transaction.name[0] }}</AvatarFallback>
+              </Avatar>
+              <div class="flex flex-col">
+                <span class="font-semibold text-sm">{{
+                  transaction.name
+                }}</span>
+                <div
+                  :class="{
+                    'text-chart-2': isPaid(transaction),
+                    '': isDueSoon(transaction),
+                    '': !isPaid(transaction) && !isDueSoon(transaction),
+                  }"
+                >
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs">{{
+                      formatDate(transaction.date)
+                    }}</span>
+                    <img
+                      v-if="isPaid(transaction)"
+                      src="/images/icon-bill-paid.svg"
+                      alt=""
+                    />
+                    <img
+                      v-else-if="isDueSoon(transaction)"
+                      src="/images/icon-bill-due.svg"
+                      alt=""
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <span class="text-sm font-bold">
+              {{ formatCurrency(transaction.amount) }}
+            </span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -113,11 +180,12 @@ interface Transaction {
   avatar?: string;
 }
 
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import data from "@/data/data.json";
 import { formatCurrency } from "../../helper/formatter";
 
 const transactions: Transaction[] = data.transactions;
+const isMobile = ref<boolean>(false);
 const searchName = ref<string>("");
 const sortField = ref<
   "latest" | "oldest" | "aToZ" | "zToA" | "highest" | "lowest"
@@ -183,42 +251,53 @@ const filteredTransactions = computed<Transaction[]>(() => {
   });
 });
 
-const getNextDueDate = (bill: Transaction, referenceDate: Date): Date => {
-  const billDate = new Date(bill.date);
-  let nextDate = new Date(billDate);
-
-  while (nextDate.getTime() <= referenceDate.getTime()) {
-    nextDate.setMonth(nextDate.getMonth() + 1);
-  }
-
-  return nextDate;
-};
+const getDayOfMonth = (date: string) => new Date(date).getUTCDate();
 
 const paidBillsTransactions = computed<Transaction[]>(() =>
-  latestRecurringBills.value.filter(
-    (t) => new Date(t.date).getTime() <= latestTransactionDate.value.getTime()
-  )
+  latestRecurringBills.value.filter((t) => {
+    const billDay = getDayOfMonth(t.date);
+    const latestDay = latestTransactionDate.value.getUTCDate();
+    return billDay <= latestDay;
+  })
 );
 
 const dueSoonTransactions = computed<Transaction[]>(() =>
   latestRecurringBills.value.filter((t) => {
-    const diff =
-      (new Date(t.date).getTime() - latestTransactionDate.value.getTime()) /
-      (1000 * 60 * 60 * 24);
-    return diff > 0 && diff <= 5;
+    const billDay = getDayOfMonth(t.date);
+    const latestDay = latestTransactionDate.value.getUTCDate();
+    return billDay > latestDay && billDay <= latestDay + 5;
   })
 );
 
 const upcomingTransactions = computed<Transaction[]>(() =>
   latestRecurringBills.value.filter((t) => {
-    const diff =
-      (new Date(t.date).getTime() - latestTransactionDate.value.getTime()) /
-      (1000 * 60 * 60 * 24);
-    return diff > 5;
+    const billDay = getDayOfMonth(t.date);
+    const latestDay = latestTransactionDate.value.getUTCDate();
+    return billDay > latestDay;
   })
 );
 
-// Calculations
+const formatDate = (isoDate: string): string => {
+  const date = new Date(isoDate);
+  const day = date.getUTCDate();
+
+  const getOrdinal = (n: number) => {
+    if (n > 3 && n < 21) return "th";
+    switch (n % 10) {
+      case 1:
+        return "st";
+      case 2:
+        return "nd";
+      case 3:
+        return "rd";
+      default:
+        return "th";
+    }
+  };
+
+  return `Monthly-${day}${getOrdinal(day)}`;
+};
+
 const totalBills = computed<number>(() =>
   latestRecurringBills.value.reduce((sum, t) => sum + t.amount, 0)
 );
@@ -235,36 +314,30 @@ const totalUpcoming = computed<number>(() =>
   upcomingTransactions.value.reduce((sum, t) => sum + t.amount, 0)
 );
 
-// Counts
 const filteredPaidBillsCount = computed(
   () => paidBillsTransactions.value.length
 );
 const filteredDueSoonCount = computed(() => dueSoonTransactions.value.length);
 const filteredUpcomingCount = computed(() => upcomingTransactions.value.length);
 
-const formatDate = (isoDate: string): string => {
-  const date = new Date(isoDate);
-
-  const day = date.getUTCDate();
-  const getOrdinal = (n: number) => {
-    if (n > 3 && n < 21) return "th";
-    switch (n % 10) {
-      case 1:
-        return "st";
-      case 2:
-        return "nd";
-      case 3:
-        return "rd";
-      default:
-        return "th";
-    }
-  };
-
-  const month = date.toLocaleString("en-US", {
-    month: "long",
-    timeZone: "UTC",
-  });
-
-  return `${month}-${day}${getOrdinal(day)}`;
+// add logo date
+const isPaid = (transaction: Transaction) => {
+  const billDay = getDayOfMonth(transaction.date);
+  const latestDay = latestTransactionDate.value.getUTCDate();
+  return billDay <= latestDay;
 };
+
+const isDueSoon = (transaction: Transaction) => {
+  const billDay = getDayOfMonth(transaction.date);
+  const latestDay = latestTransactionDate.value.getUTCDate();
+  return billDay > latestDay && billDay <= latestDay + 5;
+};
+
+onMounted(() => {
+  isMobile.value = window.innerWidth < 768;
+
+  window.addEventListener("resize", () => {
+    isMobile.value = window.innerWidth < 768;
+  });
+});
 </script>
