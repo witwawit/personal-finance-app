@@ -11,7 +11,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['"Public Sans"', 'sans-serif'],
+        sans: ['"Public Sans"', 'ui-sans-serif', 'system-ui'],
       },
     },
   },

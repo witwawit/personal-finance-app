@@ -1,5 +1,5 @@
 <template>
-  <h1 class="text-3xl font-semibold">overview</h1>
+  <h1 class="text-3xl font-semibold">Overview</h1>
 
   <div class="flex flex-col xl:flex-row justify-between gap-6 py-8">
     <Card
@@ -91,7 +91,7 @@
             </div>
             <div class="text-right">
               <p class="text-md font-semibold">
-                {{ formatCurrency(tx.amount) }}
+                {{ formatCurrencyNegative(tx.amount) }}
               </p>
               <p class="text-xs font-thin">{{ formatDate(tx.date) }}</p>
             </div>
@@ -111,10 +111,18 @@
           </div>
         </CardHeader>
 
-        <CardContent class="grid grid-cols-2 md:grid-cols-5 gap-2 pt-5">
-          <div class="md:col-span-3 col-span-2 border"></div>
+        <CardContent class="grid grid-cols-2 md:grid-cols-5 gap-5 pt-5">
+          <div class="md:col-span-3 col-span-2 relative">
+            <PieChart
+              :budgets="budgets"
+              :showNumber="false"
+              class="xl:-translate-y-10"
+            />
+          </div>
 
-          <div class="md:col-span-2 col-span-2 border flex flex-col gap-2">
+          <div
+            class="md:col-span-2 col-span-2 flex flex-col gap-2 justify-center"
+          >
             <div v-for="budget in budgets" :key="budget.category">
               <div
                 class="flex flex-col pl-2 border-l-5"
@@ -123,8 +131,10 @@
                   borderLeftStyle: 'solid',
                 }"
               >
-                <h2>{{ budget.category }}</h2>
-                <h2>{{ budget.maximum }}</h2>
+                <h2 class="text-sm">{{ budget.category }}</h2>
+                <h2 class="text-md font-semibold">
+                  {{ formatCurrency(budget.maximum) }}
+                </h2>
               </div>
             </div>
           </div>
@@ -165,17 +175,21 @@
 <script setup lang="ts">
 import data from "@/data/data.json";
 import { ref } from "vue";
+import { formatCurrency, formatCurrencyNegative } from "../../helper/formatter";
 
-const budgets = data.budgets;
+const budgets = data.budgets.map((budget) => {
+  const spent = data.transactions
+    .filter((tx) => tx.category === budget.category)
+    .reduce((acc, tx) => acc + Math.abs(tx.amount), 0);
 
-const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value);
-};
+  const remain = budget.maximum - spent;
+
+  return {
+    ...budget,
+    spent,
+    remain,
+  };
+});
 
 const balanceCards = {
   Current: formatCurrency(data.balance.current),
@@ -201,10 +215,10 @@ const formatDate = (dateString: string) => {
 };
 
 const paidBills: number = billsTransactions
-  .filter((tx) => tx.recurring === true)
-  .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+  .filter((bg) => bg.recurring === true)
+  .reduce((sum, bg) => sum + Math.abs(bg.amount), 0);
 
 const dueSoon: number = billsTransactions
-  .filter((tx) => tx.recurring === false)
-  .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+  .filter((bg) => bg.recurring === false)
+  .reduce((sum, bg) => sum + Math.abs(bg.amount), 0);
 </script>

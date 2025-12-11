@@ -1,7 +1,7 @@
 <template>
   <div class="flex justify-between">
     <h1 class="text-3xl font-semibold">Budgets</h1>
-    <Button>+ Add New Budgets</Button>
+    <!-- <Button>+ Add New Budgets</Button> -->
   </div>
 
   <div class="py-8">
@@ -10,14 +10,11 @@
         <Card class="flex-1 shadow rounded-[12px] p-6">
           <CardContent>
             <!-- chart -->
-
+            <PieChart :budgets="budgets" :showNumber="true" />
             <!-- summary -->
             <div class="flex flex-col">
-              <p>Spending Summary</p>
-              <div
-                v-for="budget in budgets"
-                :key="budget.category"
-              >
+              <h2 class="text-xl font-semibold">Spending Summary</h2>
+              <div v-for="budget in budgets" :key="budget.category">
                 <div
                   class="flex justify-between pl-2 border-l-5 my-4"
                   :style="{
@@ -26,7 +23,12 @@
                   }"
                 >
                   <h2>{{ budget.category }}</h2>
-                  <h2>{{ budget.spent }} of {{ budget.maximum }}</h2>
+                  <h2 class="text-md font-semibold">
+                    {{ formatCurrency(budget.spent) }}
+                    <span class="text-sm font-normal"
+                      >of {{ formatCurrency(budget.maximum) }}</span
+                    >
+                  </h2>
                 </div>
                 <Separator />
               </div>
@@ -53,12 +55,15 @@
                 </DropdownMenuTrigger>
 
                 <DropdownMenuContent class="w-40" align="end">
-                  <DropdownMenuItem @click="openDialog('edit')">
+                  <DropdownMenuItem @click="openDialog('edit', budget)">
                     Edit
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
 
-                  <DropdownMenuItem @click="openDialog('delete', budget)">
+                  <DropdownMenuItem
+                    @click="openDialog('delete', budget)"
+                    class="text-chart-3"
+                  >
                     Delete
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -67,14 +72,13 @@
           </CardHeader>
 
           <CardContent>
-            <p>Maximum: {{ budget.maximum }}</p>
+            <p>Maximum: {{ formatCurrency(budget.maximum) }}</p>
             <div class="py-5">
               <Progress
                 :model-value="budget.spent"
+                :max="Math.max(budget.maximum, budget.spent)"
                 :color="budget.theme"
-                :max="budget.remain"
                 class="w-full h-3 rounded"
-                :class="`bg-[${budget.theme}]`"
               />
             </div>
             <div class="grid grid-cols-2 gap-2 py-3">
@@ -82,18 +86,26 @@
                 class="col-span-1 border-l-5 px-3"
                 :style="{ borderLeftColor: budget.theme }"
               >
-                <p>Spent</p>
-                <p>{{ budget.spent }}</p>
+                <p class="text-sm">Spent</p>
+                <p class="text-md font-bold">
+                  {{ formatCurrency(budget.spent) }}
+                </p>
               </div>
-              <div class="col-span-1 border-l-5 px-3">
-                <p>Remaining</p>
-                <p>{{ budget.remain }}</p>
+              <div class="col-span-1 border-l-5 border-primary px-3">
+                <p class="text-sm">Remaining</p>
+                <p class="text-md font-bold">
+                  {{
+                    budget.remain > 0
+                      ? formatCurrency(budget.remain)
+                      : formatCurrency(0)
+                  }}
+                </p>
               </div>
             </div>
-            <Card>
+            <Card class="bg-primary">
               <CardHeader
                 ><div class="flex justify-between">
-                  <p>Lastest Spending</p>
+                  <p class="text-md font-semibold">Lastest Spending</p>
                   <NuxtLink
                     :to="{
                       path: '/transaction',
@@ -119,7 +131,7 @@
                     <span>{{ tx.name }}</span>
                   </div>
                   <div class="text-right">
-                    <p>{{ tx.amount }}</p>
+                    <p>{{ formatCurrency(tx.amount) }}</p>
                     <p>{{ tx.date }}</p>
                   </div>
                 </div>
@@ -137,6 +149,7 @@
     :action="dialogAction"
     :budget="selectedBudget"
     :budgets="budgets"
+    :transactions="data.transactions"
     @close="dialogOpen = false"
     @delete="deleteBudget"
     @save="saveBudget"
@@ -146,8 +159,9 @@
 <script setup lang="ts">
 import data from "@/data/data.json";
 import { ref } from "vue";
+import BudgetDialog from "../../components/budget-dialog/BudgetDialog.vue";
+import { formatCurrency } from "../../helper/formatter";
 
-// Interfaces
 interface Transaction {
   name: string;
   category: string;
@@ -168,6 +182,7 @@ interface ISummaryNew {
 const dialogOpen = ref(false);
 const dialogAction = ref<"edit" | "delete" | null>(null);
 const selectedBudget = ref<ISummaryNew | null>(null);
+const originalCategory = ref<string>("");
 
 const budgets = ref<ISummaryNew[]>([]);
 
@@ -195,7 +210,7 @@ budgets.value = data.budgets.map((budget) => {
     0
   );
 
-  const remain = Math.max(0, budget.maximum - spent);
+  const remain = budget.maximum - spent;
 
   const lastThree: Transaction[] = data.transactions
     .filter((tx) => tx.category === budget.category)
@@ -213,7 +228,8 @@ budgets.value = data.budgets.map((budget) => {
 
 const openDialog = (action: "edit" | "delete", budget: ISummaryNew) => {
   dialogAction.value = action;
-  selectedBudget.value = budget;
+  selectedBudget.value = { ...budget };
+  originalCategory.value = budget.category;
   dialogOpen.value = true;
 };
 
@@ -222,8 +238,10 @@ const deleteBudget = (budget: ISummaryNew) => {
   dialogOpen.value = false;
 };
 
-const saveBudget = (budget: ISummaryNew) => {
-  console.log("Save:", budget.category);
+const saveBudget = (budget: ISummaryNew & { originalCategory?: string }) => {
+  budgets.value = budgets.value.map((b) =>
+    b.category === originalCategory.value ? budget : b
+  );
   dialogOpen.value = false;
 };
 </script>

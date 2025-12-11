@@ -23,7 +23,7 @@ const delegatedProps = reactiveOmit(props, "class", "color");
     v-bind="delegatedProps"
     :class="
       cn(
-        'relative h-2 w-full overflow-hidden rounded-full bg-primary/20',
+        'relative h-2 w-full overflow-hidden rounded-full bg-[#F8F4F0]',
         props.class
       )
     "
@@ -32,7 +32,7 @@ const delegatedProps = reactiveOmit(props, "class", "color");
       class="h-full w-full flex-1 transition-all"
       :style="{
         backgroundColor: props.color,
-        transform: `translateX(-${100 - (props.modelValue ?? 0)}%)`,
+        transform: `translateX(-${100 - ((props.modelValue ?? 0) / (props.max ?? 100)) * 100}%)`,
       }"
     />
   </ProgressRoot>

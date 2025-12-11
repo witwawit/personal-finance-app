@@ -80,8 +80,11 @@
           <TableCell>{{ transaction.category }}</TableCell>
           <TableCell>{{ formatDate(transaction.date) }}</TableCell>
 
-          <TableCell class="text-right font-medium">
-            {{ formatCurrency(transaction.amount) }}
+          <TableCell
+            class="text-right font-bold"
+            :class="transaction.amount < 0 ? '' : 'text-chart-2'"
+          >
+            {{ formatCurrencyNegative(transaction.amount) }}
           </TableCell>
         </TableRow>
       </TableBody>
@@ -109,7 +112,7 @@
 
           <div class="flex flex-col">
             <span class="text-md font-medium">
-              {{ formatCurrency(transaction.amount) }}
+              {{ formatCurrencyNegative(transaction.amount) }}
             </span>
 
             <span class="text-xs">
@@ -158,10 +161,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from "vue";
-import data from "@/data/data.json";
-import { useRoute } from "vue-router";
-
 interface Transaction {
   name: string;
   category: string;
@@ -169,6 +168,11 @@ interface Transaction {
   amount: number;
   avatar?: string;
 }
+
+import { ref, computed, watch, onMounted } from "vue";
+import data from "@/data/data.json";
+import { useRoute } from "vue-router";
+import { formatCurrencyNegative } from "../../helper/formatter";
 
 const transactions: Transaction[] = data.transactions;
 
@@ -243,9 +247,6 @@ const prevPage = () => {
 const nextPage = () => {
   if (currentPage.value < totalPagesFiltered.value) currentPage.value++;
 };
-
-const formatCurrency = (amount: number): string =>
-  amount.toLocaleString("en-US", { style: "currency", currency: "USD" });
 
 const formatDate = (dateStr: string) => {
   const date = new Date(dateStr);

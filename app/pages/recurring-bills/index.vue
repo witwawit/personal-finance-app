@@ -3,11 +3,11 @@
 
   <div class="grid grid-cols-1 xl:grid-cols-3 gap-8 py-8">
     <!-- sum box -->
-    <div class="col-span-1 flex xl:flex-col gap-5">
+    <div class="col-span-1 flex flex-col gap-5">
       <Card
-        class="bg-sidebar-primary w-full rounded-[12px] p-[24px] text-white shadow-[0_8px_24px_0_rgba(0,0,0,0.05)]"
+        class="flex-1 xl:flex-0 bg-sidebar-primary rounded-[12px] text-white shadow-[0_8px_24px_0_rgba(0,0,0,0.05)]"
       >
-        <CardContent class="flex flex-col justify-center">
+        <CardContent class="flex flex-col justify-center gap-2">
           <img src="/images/icon-recurring-bills.svg" class="w-10 h-10" />
           <h2>Total Bills</h2>
           <h2 class="text-3xl font-bold">{{ formatCurrency(totalBills) }}</h2>
@@ -15,7 +15,7 @@
       </Card>
 
       <Card
-        class="bg-background w-full rounded-[12px] p-[20px] shadow-[0_8px_24px_0_rgba(0,0,0,0.05)]"
+        class="flex-1 xl:flex-0 bg-background rounded-[12px] shadow-[0_8px_24px_0_rgba(0,0,0,0.05)]"
       >
         <CardContent>
           <h2 class="text-md font-semibold">Summary</h2>
@@ -38,7 +38,7 @@
 
     <!-- table -->
     <div
-      class="col-span-2 rounded-[12px] shadow-[0_8px_24px_0_rgba(0,0,0,0.05)] p-6 bg-background"
+      class="colspan-1 xl:col-span-2 rounded-[12px] shadow-[0_8px_24px_0_rgba(0,0,0,0.05)] p-6 bg-background"
     >
       <div class="flex flex-wrap items-center justify-between gap-5 mb-4">
         <div class="min-w-[300px]">
@@ -66,7 +66,7 @@
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Recipient / Sender</TableHead>
+            <TableHead>Bill Title</TableHead>
             <TableHead>Due Date</TableHead>
             <TableHead class="text-right">Amount</TableHead>
           </TableRow>
@@ -83,9 +83,7 @@
               </Avatar>
               <span>{{ transaction.name }}</span>
             </TableCell>
-            <TableCell
-              :class="transaction.recurring ? 'text-green-600' : 'text-red-600'"
-            >
+            <TableCell>
               {{ formatDate(transaction.date) }}
             </TableCell>
             <TableCell class="text-right font-medium">
@@ -99,9 +97,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
-import data from "@/data/data.json";
-
 interface Transaction {
   name: string;
   category: string;
@@ -110,6 +105,10 @@ interface Transaction {
   recurring: boolean;
   avatar?: string;
 }
+
+import { ref, computed } from "vue";
+import data from "@/data/data.json";
+import { formatCurrency } from "../../helper/formatter";
 
 const transactions: Transaction[] = data.transactions;
 
@@ -120,11 +119,30 @@ const sortField = ref<
 >("latest");
 
 const billsTransactions = computed<Transaction[]>(() =>
-  transactions.filter((t) => t.category === "Bills")
+  transactions.filter((t) => t.recurring)
 );
 
+// Keep only the latest recurring bill per name
+const latestRecurringBills = computed<Transaction[]>(() => {
+  const map = new Map<string, Transaction>();
+
+  billsTransactions.value.forEach((t) => {
+    const existing = map.get(t.name);
+
+    if (!existing) {
+      map.set(t.name, t);
+    } else {
+      if (new Date(t.date).getTime() > new Date(existing.date).getTime()) {
+        map.set(t.name, t);
+      }
+    }
+  });
+
+  return Array.from(map.values());
+});
+
 const filteredTransactions = computed<Transaction[]>(() => {
-  let result = transactions.filter((t) => t.category === "Bills");
+  let result = latestRecurringBills.value;
 
   if (searchName.value) {
     result = result.filter((t) =>
@@ -132,7 +150,7 @@ const filteredTransactions = computed<Transaction[]>(() => {
     );
   }
 
-  result = [...result].sort((a, b) => {
+  return [...result].sort((a, b) => {
     switch (sortField.value) {
       case "latest":
         return new Date(b.date).getTime() - new Date(a.date).getTime();
@@ -150,20 +168,18 @@ const filteredTransactions = computed<Transaction[]>(() => {
         return 0;
     }
   });
-
-  return result;
 });
 
 const totalBills = computed<number>(() =>
-  billsTransactions.value.reduce((sum, t) => sum + t.amount, 0)
+  latestRecurringBills.value.reduce((sum, t) => sum + t.amount, 0)
 );
 
 const filteredPaidBillsCount = computed<number>(
-  () => billsTransactions.value.filter((t) => t.recurring).length
+  () => latestRecurringBills.value.filter((t) => t.recurring).length
 );
 
 const filteredDueSoonCount = computed<number>(
-  () => billsTransactions.value.filter((t) => !t.recurring).length
+  () => latestRecurringBills.value.filter((t) => !t.recurring).length
 );
 
 const paidBills = computed<number>(() =>
@@ -177,12 +193,6 @@ const dueSoon = computed<number>(() =>
     .filter((t) => !t.recurring)
     .reduce((sum, t) => sum + t.amount, 0)
 );
-
-const formatCurrency = (amount: number): string =>
-  Math.abs(amount).toLocaleString("en-US", {
-    style: "currency",
-    currency: "USD",
-  });
 
 const formatDate = (isoDate: string): string => {
   const date = new Date(isoDate);
@@ -202,7 +212,6 @@ const formatDate = (isoDate: string): string => {
     }
   };
 
-  // Get month name
   const month = date.toLocaleString("en-US", {
     month: "long",
     timeZone: "UTC",
